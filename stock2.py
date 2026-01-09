@@ -64,6 +64,21 @@ def resolve_symbol(name: str) -> str:
     
     # Handle mixed input like "台積電" or "2330"
     name = name.strip()
+    
+    # Special cases for Index/Futures
+    special_map = {
+        "台指期": "TX",
+        "台指": "TX",
+        "台指期貨": "TX",
+        "加權指數": "^TWII",
+        "大盤": "^TWII",
+        "那斯達克": "NQ",
+        "小那斯達克": "NQ",
+        "黃金": "GC=F"
+    }
+    if name in special_map:
+        return special_map[name]
+        
     if name in TAIWAN_STOCK_MAP:
         return TAIWAN_STOCK_MAP[name]
     
