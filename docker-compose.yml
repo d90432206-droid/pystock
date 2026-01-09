@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    container_name: stock_backend
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./server_debug.log:/app/server_debug.log
+      - ./server_error.log:/app/server_error.log
+      - ./yf_cache:/app/yf_cache
+    environment:
+      - GEMINI_API_KEY=AIzaSyAGjIK3T9NcGQSpgykLstEKBxat2J0SUD4
+    restart: always
+
+  frontend:
+    build: ./frontend
+    container_name: stock_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: always
