@@ -109,6 +109,7 @@ const App = () => {
   const [manualResult, setManualResult] = useState(null);
   const [filterStatus, setFilterStatus] = useState("ALL"); 
   const [lookback, setLookback] = useState(120); 
+  const [showHelp, setShowHelp] = useState(false);
 
   const [quotes, setQuotes] = useState({});
   const [lastUpdated, setLastUpdated] = useState("");
@@ -286,6 +287,14 @@ const App = () => {
               />
               <button type="submit" className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm border border-slate-700 transition-colors">
                 查詢
+              </button>
+              <button 
+                type="button"
+                onClick={() => setShowHelp(true)}
+                className="p-1.5 text-slate-400 hover:text-indigo-400 transition-colors"
+                title="代碼參考"
+              >
+                <Filter className="w-5 h-5" />
               </button>
             </form>
 
@@ -568,6 +577,8 @@ const App = () => {
 
       </main>
 
+      <TickerHelpModal isOpen={showHelp} onClose={() => setShowHelp(false)} />
+
       <style>{`
         @media print {
           body { background-color: white !important; color: black !important; }
@@ -576,6 +587,85 @@ const App = () => {
         }
       `}</style>
     </div >
+  );
+};
+
+const TickerHelpModal = ({ isOpen, onClose }) => {
+  if (!isOpen) return null;
+  const categories = [
+    {
+      title: "常用指數 & 期貨",
+      items: [
+        { name: "加權指數", code: "^TWII", note: "搜尋「大盤」也可" },
+        { name: "台指期貨", code: "TX=F", note: "搜尋「台指期」也可" },
+        { name: "那斯達克100", code: "NQ=F", note: "搜尋「小那」也可" },
+        { name: "標普500", code: "ES=F", note: "美股大盤期貨" },
+        { name: "道瓊工業期貨", code: "YM=F", note: "道瓊期貨" },
+        { name: "黃金期貨", code: "GC=F", note: "搜尋「黃金」也可" }
+      ]
+    },
+    {
+      title: "熱門權值股 (台股)",
+      items: [
+        { name: "台積電", code: "2330", note: "" },
+        { name: "鴻海", code: "2317", note: "" },
+        { name: "聯發科", code: "2454", note: "" },
+        { name: "廣達", code: "2382", note: "" }
+      ]
+    },
+    {
+        title: "美股熱門標的",
+        items: [
+          { name: "輝達 (NVIDIA)", code: "NVDA", note: "" },
+          { name: "特斯拉 (Tesla)", code: "TSLA", note: "" },
+          { name: "蘋果 (Apple)", code: "AAPL", note: "" },
+          { name: "超微 (AMD)", code: "AMD", note: "" }
+        ]
+      }
+  ];
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-slate-900 border border-slate-700 w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[80vh]">
+        <div className="p-6 border-b border-slate-800 flex justify-between items-center">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <Filter className="w-5 h-5 text-indigo-400" />
+            Yahoo Finance 代碼參考
+          </h2>
+          <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-full transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="p-6 overflow-y-auto space-y-8">
+          {categories.map((cat, i) => (
+            <div key={i}>
+              <h3 className="text-indigo-400 font-bold mb-3 flex items-center gap-2">
+                <span className="w-1 h-4 bg-indigo-500 rounded-full"></span>
+                {cat.title}
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {cat.items.map((item, j) => (
+                  <div key={j} className="bg-slate-950/50 border border-slate-800 p-3 rounded-lg flex justify-between items-center hover:border-slate-600 transition-colors">
+                    <div>
+                      <div className="text-slate-200 font-medium">{item.name}</div>
+                      <div className="text-xs text-slate-500">{item.note}</div>
+                    </div>
+                    <div className="bg-slate-800 px-2 py-1 rounded text-xs font-mono text-indigo-300 border border-slate-700">
+                      {item.code}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+          <div className="bg-indigo-950/20 border border-indigo-900/30 p-4 rounded-xl">
+             <p className="text-xs text-indigo-300 leading-relaxed">
+               💡 提示：本系統已內建中文辨識，您可以直接在搜尋框輸入名稱（例如：台指期、台積電），系統會自動轉換為正確的 Yahoo Finance 代碼。
+             </p>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 
