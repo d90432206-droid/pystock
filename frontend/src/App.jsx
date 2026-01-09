@@ -124,9 +124,13 @@ const App = () => {
           setQuotes(data);
           const now = new Date();
           setLastUpdated(now.toLocaleTimeString());
+        } else if (data.error) {
+          console.error("API error:", data.error);
+          setQuotes({ error: "API 回傳錯誤" });
         }
       } catch (e) {
         console.error("Quote fetch error", e);
+        setQuotes({ error: "連線失敗" });
       }
     };
 
@@ -310,15 +314,21 @@ const App = () => {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {Object.keys(quotes).length > 0 ? (
-              Object.entries(quotes).map(([symbol, data]) => {
-                const isPositive = data.change > 0;
-                const isZero = data.change === 0;
-                const colorClass = isPositive ? "text-red-400" : (isZero ? "text-slate-200" : "text-green-400");
-                const displaySymbol = symbol === 'TX=F' ? '台指期 (TX)' : 
-                                      symbol === 'NQ=F' ? '那斯達克 (NQ)' : 
-                                      symbol === '^TWII' ? '加權指數' : symbol;
-                
-                return (
+              quotes.error ? (
+                <div className="col-span-full text-center py-6 text-red-400 bg-red-950/20 rounded-lg border border-red-900/30">
+                   無法讀取行情資料 (請確認後端網址是否正確)
+                </div>
+              ) : (
+                Object.entries(quotes).map(([symbol, data]) => {
+                  if (symbol === "error") return null;
+                  const isPositive = data.change > 0;
+                  const isZero = data.change === 0;
+                  const colorClass = isPositive ? "text-red-400" : (isZero ? "text-slate-200" : "text-green-400");
+                  const displaySymbol = symbol === 'TX=F' ? '台指期 (TX)' : 
+                                        symbol === 'NQ=F' ? '那斯達克 (NQ)' : 
+                                        symbol === '^TWII' ? '加權指數' : symbol;
+                  
+                  return (
                   <div key={symbol} className="bg-slate-800/50 rounded-lg p-4 border border-slate-700 hover:border-indigo-500/50 transition-all">
                      <div className="text-xs text-slate-400 mb-1">{displaySymbol}</div>
                      {data.error ? (
@@ -353,8 +363,9 @@ const App = () => {
                        </>
                      )}
                   </div>
-                )
-              })
+                  );
+                })
+              )
             ) : (
                <div className="col-span-full text-center py-4 text-slate-500 animate-pulse">載入行情中...</div>
             )}
