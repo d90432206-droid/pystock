@@ -453,6 +453,10 @@ def check_stock(symbol: str, interval: str = "1d", lookback: int = 120):
         logger.error(f"Check error: {e}")
         return {"symbol": symbol, "is_passed": False, "message": str(e), "chart": None, "candles": [], "dist": "N/A"}
 
+@app.get("/")
+def read_root():
+    return {"status": "pystock backend alive", "time": datetime.now().isoformat()}
+
 @app.get("/api/health")
 def health_check():
     return {"status": "ok", "version": "4.1-STRICT-ABC", "time": datetime.now().isoformat()}
