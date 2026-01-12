@@ -5,17 +5,24 @@ FROM node:18-alpine AS frontend-build
 
 WORKDIR /app/frontend
 
-# Copy frontend package files
+# Copy frontend package files first (better caching)
 COPY frontend/package*.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies with verbose logging
+RUN echo "📦 Installing frontend dependencies..." && \
+    npm ci --prefer-offline --no-audit
 
 # Copy frontend source code
 COPY frontend/ ./
 
-# Build the React app
-RUN npm run build
+# Build the React app with error handling
+RUN echo "🔨 Building React frontend..." && \
+    npm run build && \
+    echo "✅ Frontend build completed" && \
+    ls -la dist/
+
+# Verify build output exists
+RUN test -f dist/index.html || (echo "❌ ERROR: index.html not found in dist/" && exit 1)
 
 # ===========================
 # Stage 2: Python Backend + Compiled Frontend
@@ -33,7 +40,8 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN echo "🐍 Installing Python dependencies..." && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY stock2.py .
@@ -46,10 +54,17 @@ RUN mkdir -p yf_cache
 # Copy compiled frontend from Stage 1
 COPY --from=frontend-build /app/frontend/dist /app/frontend/dist
 
+# Verify frontend files were copied
+RUN echo "📂 Checking frontend files..." && \
+    ls -la /app/frontend/dist/ && \
+    test -f /app/frontend/dist/index.html || (echo "❌ ERROR: Frontend files missing!" && exit 1)
+
 # Expose port (Render will provide PORT env var)
 EXPOSE 8001
 
-# Run the application
-# Python stock2.py now serves both API and frontend
-CMD ["python", "stock2.py"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8001/api/health')" || exit 1
 
+# Run the application
+CMD ["python", "stock2.py"]

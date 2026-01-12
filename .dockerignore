@@ -1,0 +1,69 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log
+*.txt.log
+backend_log.txt
+server_debug*.log
+server_error.log
+
+# Cache files
+yf_cache/
+yf_test_temp_cache/
+cache_*.json
+
+# Node modules (will be installed in Docker)
+frontend/node_modules/
+node_modules/
+
+# Frontend build output (will be built in Docker)
+frontend/dist/
+frontend/.vite/
+
+# Test files
+test_*.py
+debug_*.py
+
+# Documentation
+README*.md
+RENDER_DEPLOY.md
+*.md
+
+# Other project folders
+PythonExample/
+PythonExampleV2/
+SKDLLPythonTester/
+2026-01-06/
+元件/
+
+# Docker files
+Dockerfile.unified
+docker-compose.yml
