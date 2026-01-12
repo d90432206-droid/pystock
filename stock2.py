@@ -12,6 +12,8 @@ import time
 from datetime import datetime
 from fastapi import FastAPI, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import google.generativeai as genai
 import traceback
 import math
@@ -117,6 +119,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Store frontend path for later use
+frontend_dist = os.path.join(os.path.dirname(__file__), "frontend", "dist")
+
 # --- AI & Charting logic ---
 
 @app.get("/api/quote")
@@ -184,7 +189,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyCzAvYgcX1rXftIRdMrcWiuAxweXadRLFQ")
+API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyDJ-JTszdjSy4PjpVbHTEjZWwvLz1Apv08")
 genai.configure(api_key=API_KEY)
 # Switch to user-specified model version
 MODEL_NAME = 'gemini-2.5-flash'
@@ -468,10 +473,6 @@ def check_stock(symbol: str, interval: str = "1d", lookback: int = 120):
         logger.error(f"Check error: {e}")
         return {"symbol": symbol, "is_passed": False, "message": str(e), "chart": None, "candles": [], "dist": "N/A"}
 
-@app.get("/")
-def read_root():
-    return {"status": "pystock backend alive", "time": datetime.now().isoformat()}
-
 @app.get("/api/health")
 def health_check():
     return {"status": "ok", "version": "4.1-STRICT-ABC", "time": datetime.now().isoformat()}
@@ -718,6 +719,22 @@ def start_analysis(background_tasks: BackgroundTasks, force: bool = False):
 @app.get("/api/status")
 def get_status():
     return job_state
+
+# ===========================
+# Frontend Static Files (Must be AFTER all API routes)
+# ===========================
+if os.path.exists(frontend_dist):
+    # Mount assets directory for JS/CSS/images
+    assets_dir = os.path.join(frontend_dist, "assets")
+    if os.path.exists(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+    
+    # Catchall route for SPA - serve index.html for all non-API routes
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        """Serve index.html for any route (React Router handles client-side routing)"""
+        index_path = os.path.join(frontend_dist, "index.html")
+        return FileResponse(index_path)
 
 if __name__ == "__main__":
     import uvicorn

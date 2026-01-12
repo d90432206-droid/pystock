@@ -1,0 +1,85 @@
+# ===========================
+# 多階段構建：前端 + 後端統一部署
+# ===========================
+
+# Stage 1: 構建前端
+FROM node:18-alpine AS frontend-builder
+
+WORKDIR /app/frontend
+
+# 安裝前端依賴
+COPY frontend/package*.json ./
+RUN npm install
+
+# 複製前端代碼並構建
+COPY frontend/ ./
+RUN npm run build
+
+# Stage 2: 構建最終映像（Python 後端 + 靜態前端）
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# 安裝系統依賴
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    nginx \
+    && rm -rf /var/lib/apt/lists/*
+
+# 安裝 Python 依賴
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 複製後端代碼
+COPY stock2.py .
+COPY tickers.txt .
+COPY capital_futures.py .
+
+# 創建快取目錄
+RUN mkdir -p yf_cache
+
+# 從 Stage 1 複製前端構建產物
+COPY --from=frontend-builder /app/frontend/dist /app/static
+
+# 配置 Nginx
+RUN echo 'server { \n\
+    listen 8080; \n\
+    root /app/static; \n\
+    index index.html; \n\
+    \n\
+    location / { \n\
+        try_files $uri $uri/ /index.html; \n\
+    } \n\
+    \n\
+    location /api { \n\
+        proxy_pass http://127.0.0.1:8001; \n\
+        proxy_set_header Host $host; \n\
+        proxy_set_header X-Real-IP $remote_addr; \n\
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \n\
+        proxy_set_header X-Forwarded-Proto $scheme; \n\
+        proxy_read_timeout 600; \n\
+        proxy_connect_timeout 600; \n\
+        proxy_send_timeout 600; \n\
+    } \n\
+}' > /etc/nginx/sites-available/default
+
+# 創建啟動腳本
+RUN echo '#!/bin/bash\n\
+set -e\n\
+\n\
+# 從環境變數取得 PORT，預設 8080\n\
+export APP_PORT=${PORT:-8080}\n\
+\n\
+# 更新 Nginx 配置的監聽 port\n\
+sed -i "s/listen 8080;/listen $APP_PORT;/g" /etc/nginx/sites-available/default\n\
+\n\
+# 啟動 Nginx (背景)\n\
+nginx\n\
+\n\
+# 啟動 Python 後端 (前景)\n\
+python stock2.py\n\
+' > /app/start.sh && chmod +x /app/start.sh
+
+EXPOSE 8080
+
+CMD ["/app/start.sh"]
