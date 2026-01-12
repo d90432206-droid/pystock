@@ -10,7 +10,7 @@ COPY frontend/package*.json ./
 
 # Install dependencies with verbose logging
 RUN echo "📦 Installing frontend dependencies..." && \
-    npm ci --prefer-offline --no-audit
+    npm install --prefer-offline --no-audit
 
 # Copy frontend source code
 COPY frontend/ ./
